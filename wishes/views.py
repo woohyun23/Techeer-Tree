@@ -4,10 +4,22 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import wish
 from .serializers import wishSerializer
+from rest_framework.pagination import PageNumberPagination
+
+class wishPagination(PageNumberPagination):
+    page_size = 10
 
 class wishViewSet(viewsets.ModelViewSet):
     queryset = wish.objects.all().order_by('-created_at')
     serializer_class = wishSerializer
+    pagination_class = wishPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        is_confirm = self.request.query_params.get('is_confirm')
+        if is_confirm in ['approved', 'rejected', 'pending']:
+            queryset = queryset.filter(is_confirm=is_confirm)
+        return queryset
 
     # wish 생성 시 보류를 기본 값으로 설정 -> models에서 pending으로 설정했는데 여기서 또 설정??
     def perform_create(self, serializer):
