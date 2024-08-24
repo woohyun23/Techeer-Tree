@@ -4,7 +4,7 @@ from .models import wish
 class wishSerializer(serializers.ModelSerializer):
     class Meta:
         model = wish
-        fields = ['id', 'title', 'content', 'category', 'created_at', 'is_confirm']
+        fields = ['id', 'title', 'content', 'category', 'created_at']
 
     # 예외 처리를 위한 유효성 검사
     def validate(self, data):
