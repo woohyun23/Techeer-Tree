@@ -19,6 +19,16 @@ class wishViewSet(viewsets.ModelViewSet):
         instance.delete()  # Soft delete instead of actual deletion
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(detail=False, methods=['post'])
+    def approve_all(self, request, *args, **kwargs):
+        updated_count = wish.objects.filter(is_confirm='pending').update(is_confirm='approved')
+        return Response({'status': f'{updated_count} wishes approved'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def reject_all(self, request, *args, **kwargs):
+        updated_count = wish.objects.filter(is_confirm='pending').update(is_confirm='rejected')
+        return Response({'status': f'{updated_count} wishes rejected'}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'])
     def restore(self, request, *args, **kwargs):
         # restore 메서드는 커스텀 액션으로, 삭제된 항목을 복원
@@ -34,3 +44,28 @@ class wishViewSet(viewsets.ModelViewSet):
         queryset = wish.all_objects.all().order_by('-created_at')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def pending_wishes(self, request, *args, **kwargs):
+        # 보류 상태의 소원을 조회합니다.
+        queryset = wish.objects.filter(is_confirm='pending').order_by('-created_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_confirm == 'pending':
+            instance.is_confirm = 'approved'
+            instance.save()
+            return Response({'status': 'approved'}, status=status.HTTP_200_OK)
+        return Response({'status': 'not pending'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_confirm == 'pending':
+            instance.is_confirm = 'rejected'
+            instance.save()
+            return Response({'status': 'rejected'}, status=status.HTTP_200_OK)
+        return Response({'status': 'not pending'}, status=status.HTTP_400_BAD_REQUEST)
